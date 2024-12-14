@@ -1,0 +1,85 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #e3efd3;
+}
+
+.container {
+    width: 80%;
+    margin: auto;
+    overflow: hidden;
+    padding: 20px;
+    background: #aec3b0;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+h1, h2 {
+    color: #333;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+label {
+    display: block;
+    margin-bottom: 5px;
+    color: #555;
+}
+
+input, textarea {
+    width: 100%;
+    padding: 8px;
+    margin: 5px 0 15px 0;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+button {
+    background: #5cb85c;
+    color: #fff;
+    border: none;
+    padding: 10px 15px;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+button:hover {
+    background: #4cae4c;
+}
+
+.room-cards {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.room-card {
+    background: #f9f9f9;
+    padding: 15px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    width: 30%;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.room-card h3 {
+    margin-top: 0;
+}
+
+.room-card p {
+    margin: 5px 0;
+}
+
+.delete-btn {
+    display: inline-block;
+    color: #d9534f;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.delete-btn:hover {
+    color: #c9302c;
+}

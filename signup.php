@@ -4,7 +4,7 @@ session_start();
 
 // Check if form is submitted
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $name = $_POST['name'];
+    $username = $_POST['username'];
     $email = $_POST['email'];
     $password = $_POST['password'];
     $confirm_password = $_POST['confirm_password'];
@@ -20,7 +20,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $hashed_password = password_hash($password, PASSWORD_DEFAULT);
 
         // Database connection (update with your database credentials)
-        $conn = new mysqli("localhost", "root", "", "fypclear");
+        $conn = new mysqli("localhost", "root", "", "fyp");
 
         // Check connection
         if ($conn->connect_error) {
@@ -28,13 +28,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         }
 
         // Insert user data into database
-        $sql = "INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)";
+        $sql = "INSERT INTO users (username, email, password, role) VALUES (?, ?, ?, ?)";
         $stmt = $conn->prepare($sql);
-        $stmt->bind_param("ssss", $name, $email, $hashed_password, $role);
+        $stmt->bind_param("ssss", $username, $email, $hashed_password, $role);
 
         if ($stmt->execute()) {
-            // Redirect to login page
-            header("Location: login.php?signup_success=1");
+            // Redirect to signup page with success message
+            header("Location: signup.php?signup_success=1");
             exit();
         } else {
             $error = "Error: Could not complete signup. Please try again.";
@@ -56,10 +56,18 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 <body>
     <div class="signup-container">
         <h2>Signup Page</h2>
+
+        <!-- Success Message -->
+        <?php if (isset($_GET['signup_success']) && $_GET['signup_success'] == 1): ?>
+            <p class="success">Signup successful! Go to login page. You can now log in.</p>
+        <?php endif; ?>
+
+        <!-- Error Message -->
         <?php if (isset($error)): ?>
             <p class="error"><?php echo $error; ?></p>
         <?php endif; ?>
-        <form action="signup.php" method="POST">
+
+        <form action="/fyp/signup.php" method="POST">
             <div class="form-group">
                 <label for="name">Name:</label>
                 <input type="text" id="name" name="name" required>

@@ -4,36 +4,50 @@ session_start();
 
 // Check if form is submitted
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $username = $_POST['username'];
+    $username = $_POST['name'];
     $password = $_POST['password'];
-    $role = $_POST['role'];
+    $role = $_POST['role']; // Capture role from the form
 
-    // Database connection (update with your database credentials)
+    // Database connection
     $conn = new mysqli("localhost", "root", "", "fyp");
-
-    // Check connection
     if ($conn->connect_error) {
         die("Connection failed: " . $conn->connect_error);
     }
 
-    // Query based on role
-    $table = $role === 'admin' ? 'admins' : 'users';
-    $sql = "SELECT * FROM $table WHERE username = ? AND password = ?";
+    // Query to check user with role
+    $sql = "SELECT * FROM users WHERE username = ?";
     $stmt = $conn->prepare($sql);
-    $stmt->bind_param("ss", $username, $password);
+    if (!$stmt) {
+        die("Error in SQL statement preparation: " . $conn->error);
+    }
+    $stmt->bind_param("s", $username);
     $stmt->execute();
     $result = $stmt->get_result();
 
+    // Check if user exists
     if ($result->num_rows > 0) {
-        $_SESSION['username'] = $username;
-        $_SESSION['role'] = $role;
-        // Redirect to dashboard
-        header("Location: {$role}_dashboard.php");
-        exit();
+        $row = $result->fetch_assoc();
+
+        // Verify password
+        if (password_verify($password, $row['password'])) {
+            $_SESSION['username'] = $username;
+            $_SESSION['role'] = $row['role']; // Store the role from the database
+
+            // Redirect based on role
+            if ($row['role'] === "admin") {
+                header("Location: admin_dashboard.php");
+            } else {
+                header("Location: user_dashboard.php");
+            }
+            exit();
+        } else {
+            $error = "Invalid username or password.";
+        }
     } else {
         $error = "Invalid username or password.";
     }
 
+    // Close connections
     $stmt->close();
     $conn->close();
 }
@@ -48,11 +62,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 </head>
 <body>
     <div class="login-container">
-        <h2>Login Page</h2> 
+        <h2>Login Page</h2>
+        <!-- Display Error Message -->
         <?php if (isset($error)): ?>
             <p class="error"><?php echo $error; ?></p>
         <?php endif; ?>
-        <form action="login.php" method="POST">
+
+        <!-- Login Form -->
+        <form action="index.php" method="POST">
             <div class="form-group">
                 <label for="username">Username:</label>
                 <input type="text" id="username" name="username" required>
@@ -69,12 +86,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 </select>
             </div>
             <div class="form-group">
-            Don't have an account? <br><a href="signup.php" class="signup-link">Sign Up</a>
-        </div>
+                <a href="signup.php" id="login-link">Don't have an account?</a>  
+                <br><a href="signup.php" class="signup-link">Sign Up</a>
+            </div>
             <div class="form-group">
                 <button type="submit">Login</button>
             </div>
-           
         </form>
     </div>
 </body>
