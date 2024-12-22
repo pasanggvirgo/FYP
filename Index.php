@@ -4,7 +4,7 @@ session_start();
 
 // Check if form is submitted
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $username = $_POST['name'];
+    $username = $_POST['username'];
     $password = $_POST['password'];
     $role = $_POST['role']; // Capture role from the form
 
@@ -15,16 +15,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     }
 
     // Query to check user with role
-    $sql = "SELECT * FROM users WHERE username = ?";
+    $sql = "SELECT * FROM users WHERE username = ? AND role = ?";
     $stmt = $conn->prepare($sql);
     if (!$stmt) {
         die("Error in SQL statement preparation: " . $conn->error);
     }
-    $stmt->bind_param("s", $username);
+    $stmt->bind_param("ss", $username, $role); // Bind both username and role
     $stmt->execute();
     $result = $stmt->get_result();
 
-    // Check if user exists
+    // Check if user with the correct role exists
     if ($result->num_rows > 0) {
         $row = $result->fetch_assoc();
 
@@ -44,7 +44,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $error = "Invalid username or password.";
         }
     } else {
-        $error = "Invalid username or password.";
+        $error = "Invalid username, password, or role.";
     }
 
     // Close connections

@@ -8,25 +8,6 @@ if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
 
-// Handle form submission to add a new room
-if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['add_room'])) {
-    $location = $_POST['location'];
-    $rent = $_POST['rent'];
-    $number_of_rooms = $_POST['number_of_rooms'];
-    $description = $_POST['description'];
-
-    $sql = "INSERT INTO rooms (location, rent, number_of_rooms, description) VALUES ( ?, ?, ?, ?)";
-    $stmt = $conn->prepare($sql);
-    $stmt->bind_param("sdis", $location, $rent, $number_of_rooms, $description);
-
-    if ($stmt->execute()) {
-        $message = "Room added successfully.";
-    } else {
-        $error = "Error: Could not add the room.";
-    }
-    $stmt->close();
-}
-
 // Handle delete request
 if (isset($_GET['delete'])) {
     $id = $_GET['delete'];
@@ -76,28 +57,12 @@ $result = $conn->query($sql);
             <p class="error"><?php echo $error; ?></p>
         <?php endif; ?>
 
-        <h2>Add Room</h2>
-        <form action="admin_dashboard.php" method="POST">
-          
-            <div class="form-group">
-                <label for="location">Location:</label>
-                <input type="text" id="location" name="location" required>
-            </div>
-            <div class="form-group">
-                <label for="rent">Monthly Rent:</label>
-                <input type="number" id="rent" name="rent" required>
-            </div>
-            <div class="form-group">
-                <label for="number_of_rooms">Number of Rooms:</label>
-                <input type="number" id="number_of_rooms" name="number_of_rooms" required>
-            </div>
-            <div class="form-group">
-                <label for="description">Description:</label>
-                <textarea id="description" name="description" required></textarea>
-            </div>
-            <button type="submit" name="add_room">Add Room</button>
-        </form>
+        <!-- Add Room Button -->
+        <div>
+            <a href="add_room.php" class="add-room-btn">Add Room</a>
+        </div>
 
+        <!-- List of Rooms -->
         <h2>Manage Rooms</h2>
         <div class="room-cards">
             <?php while ($row = $result->fetch_assoc()): ?>

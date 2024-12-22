@@ -4,11 +4,11 @@ session_start();
 
 // Check if form is submitted
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $username = $_POST['username'];
+    $username = $_POST['name'];
     $email = $_POST['email'];
     $password = $_POST['password'];
     $confirm_password = $_POST['confirm_password'];
-    $role = $_POST['role']; // Default value will be 'user'
+    $role = $_POST['role']; // Value will be either 'user' or 'admin'
 
     // Validate input
     if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
@@ -33,8 +33,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $stmt->bind_param("ssss", $username, $email, $hashed_password, $role);
 
         if ($stmt->execute()) {
-            // Redirect to signup page with success message
-            header("Location: signup.php?signup_success=1");
+            // Redirect to login page with success message
+            header("Location: index.php?signup_success=1");
             exit();
         } else {
             $error = "Error: Could not complete signup. Please try again.";
@@ -59,7 +59,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
         <!-- Success Message -->
         <?php if (isset($_GET['signup_success']) && $_GET['signup_success'] == 1): ?>
-            <p class="success">Signup successful! Go to login page. You can now log in.</p>
+            <p class="success">Signup successful! You can now log in.</p>
         <?php endif; ?>
 
         <!-- Error Message -->
@@ -69,7 +69,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
         <form action="/fyp/signup.php" method="POST">
             <div class="form-group">
-                <label for="name">Name:</label>
+                <label for="name">UserName:</label>
                 <input type="text" id="name" name="name" required>
             </div>
             <div class="form-group">
@@ -84,7 +84,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 <label for="confirm_password">Confirm Password:</label>
                 <input type="password" id="confirm_password" name="confirm_password" required>
             </div>
-            <input type="hidden" id="role" name="role" value="user">
+            <div class="form-group">
+                <label for="role">Sign Up As:</label>
+                <select id="role" name="role" required>
+                    <option value="user">User</option>
+                    <option value="admin">Admin</option>
+                </select>
+            </div>
             <div class="form-group">
                 <button type="submit">Sign Up</button>
             </div>
