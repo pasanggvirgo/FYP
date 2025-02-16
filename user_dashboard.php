@@ -44,9 +44,13 @@ $result = $stmt->get_result();
         <!-- Available Rooms Section -->
         <h2>Available Rooms</h2>
         <div class="room-cards">
+        
+
             <?php if ($result->num_rows > 0): ?>
                 <?php while ($row = $result->fetch_assoc()): ?>
+                    
                     <div class="room-card">
+                    <a href="roomdetails.php" >
                         <!-- Display room photo -->
                         <?php if (!empty($row['photo'])): ?>
                             <img src="<?php echo htmlspecialchars($row['photo']); ?>" alt="Room Photo">
@@ -60,12 +64,12 @@ $result = $stmt->get_result();
                         <p><strong>Monthly Rent:</strong> $<?php echo htmlspecialchars($row['rent']); ?></p>
                         <p><strong>Number of Rooms:</strong> <?php echo htmlspecialchars($row['number_of_rooms']); ?></p>
                         <p><strong>Description:</strong> <?php echo htmlspecialchars($row['description']); ?></p>
-                    </div>
+                        </a></div>
                 <?php endwhile; ?>
             <?php else: ?>
                 <p>No rooms available at the moment.</p>
             <?php endif; ?>
-        </div>
+            </div>
 
         <!-- Add Room Button -->
         <div>

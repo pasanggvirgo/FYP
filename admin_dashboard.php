@@ -78,7 +78,10 @@ $result = $conn->query($sql);
 
         <!-- List of Rooms -->
         <h2>Manage Rooms</h2>
+        
+        
         <div class="room-cards">
+        <a href="roomdetails.php" >
             <?php if ($result->num_rows > 0): ?>
                 <?php while ($row = $result->fetch_assoc()): ?>
                     <div class="room-card">
@@ -98,7 +101,8 @@ $result = $conn->query($sql);
             <?php else: ?>
                 <p>No rooms available.</p>
             <?php endif; ?>
-        </div>
+            </a>
+        </div>  
     </div>
 </body>
 </html>

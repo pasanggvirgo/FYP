@@ -101,11 +101,10 @@ body {
 }
 
 /* Links Styling */
-.signup-link,
-.login-link {
+.signup-link {
     display: inline-block;
     text-align: center;
-    width: 100%;
+    width: 94%;
     padding: 12px;
     background-color: #28a745; /* Green background for signup */
     color: #fff;
