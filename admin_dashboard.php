@@ -1,21 +1,22 @@
 <?php
-// Start session
+// Start session securely
 session_start();
+session_regenerate_id(true);
 
 // Database connection
 $conn = new mysqli("localhost", "root", "", "FYP");
 if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
+    die("Database connection failed: " . $conn->connect_error);
 }
 
 // Initialize search query
 $search = isset($_GET['search']) ? trim($_GET['search']) : "";
 
 // Handle delete request
-if (isset($_GET['delete'])) {
-    $id = $_GET['delete'];
+if (isset($_GET['delete']) && is_numeric($_GET['delete'])) {
+    $id = intval($_GET['delete']);
 
-    // Fetch the photo path before deletion
+    // Prepare and execute query in one statement
     $sql = "SELECT photo FROM rooms WHERE id = ?";
     $stmt = $conn->prepare($sql);
     $stmt->bind_param("i", $id);
@@ -30,8 +31,8 @@ if (isset($_GET['delete'])) {
     $stmt->bind_param("i", $id);
 
     if ($stmt->execute()) {
-        if ($photo_path && file_exists($photo_path)) {
-            unlink($photo_path); // Delete the photo file from the server
+        if (!empty($photo_path) && file_exists(realpath($photo_path))) {
+            unlink(realpath($photo_path)); // Delete the photo file
         }
         $message = "Room deleted successfully.";
     } else {
@@ -42,7 +43,7 @@ if (isset($_GET['delete'])) {
 
 // Handle logout
 if (isset($_GET['logout'])) {
-    session_destroy(); // Destroy the session
+    session_destroy();
     header("Location: index.php");
     exit();
 }
@@ -104,8 +105,8 @@ $result = $stmt->get_result();
             <?php if ($result->num_rows > 0): ?>
                 <?php while ($row = $result->fetch_assoc()): ?>
                     <div class="room-card">
-                        <a href="roomdetails.php?id=<?php echo $row['id']; ?>">
-                            <?php if (!empty($row['photo']) && file_exists($row['photo'])): ?>
+                        <a href="room_details.php?id=<?php echo $row['id']; ?>">
+                            <?php if (!empty($row['photo']) && file_exists(realpath($row['photo']))): ?>
                                 <img src="<?php echo htmlspecialchars($row['photo']); ?>" alt="Room Photo">
                             <?php else: ?>
                                 <img src="default_room.jpg" alt="Default Room Photo">
@@ -116,7 +117,7 @@ $result = $stmt->get_result();
                             <p><strong>Description:</strong> <?php echo htmlspecialchars($row['description']); ?></p>
                         </a>
                         <div class="action-buttons">
-                            <a href="edit_room.php?edit=<?php echo $row['id']; ?>" class="edit-btn">Edit</a>
+                            <a href="edit_room.php?id=<?php echo $row['id']; ?>" class="edit-btn">Edit</a>
                             <a href="#" onclick="confirmDelete(<?php echo $row['id']; ?>)" class="delete-btn">Delete</a>
                         </div>
                     </div>
@@ -130,7 +131,6 @@ $result = $stmt->get_result();
 </html>
 
 <?php
-// Close the database connection
 $stmt->close();
 $conn->close();
 ?>

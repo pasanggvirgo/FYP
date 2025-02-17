@@ -57,7 +57,7 @@ $result = $stmt->get_result();
             <?php if ($result->num_rows > 0): ?>
                 <?php while ($row = $result->fetch_assoc()): ?>
                     <div class="room-card">
-                        <a href="roomdetails.php?id=<?php echo $row['id']; ?>">
+                        <a href="room_details.php?id=<?php echo $row['id']; ?>">
                             <?php if (!empty($row['photo'])): ?>
                                 <img src="<?php echo htmlspecialchars($row['photo']); ?>" alt="Room Photo">
                             <?php else: ?>

@@ -1,1 +1,0 @@
-<h1>Room details</h1>

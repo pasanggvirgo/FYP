@@ -101,7 +101,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['add_room'])) {
             </div>
             <div class="form-group">
                 <label for="photo">Room Photo:</label>
-                <input type="file" id="photo" name="photo" accept="image/*">
+                <input required type="file" id="photo" name="photo" accept="image/*">
             </div>
             <button type="submit" name="add_room">Add Room</button>
         </form>
