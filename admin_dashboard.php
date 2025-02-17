@@ -8,6 +8,9 @@ if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
 
+// Initialize search query
+$search = isset($_GET['search']) ? trim($_GET['search']) : "";
+
 // Handle delete request
 if (isset($_GET['delete'])) {
     $id = $_GET['delete'];
@@ -40,14 +43,19 @@ if (isset($_GET['delete'])) {
 // Handle logout
 if (isset($_GET['logout'])) {
     session_destroy(); // Destroy the session
-    header("Location: index.php"); // Redirect to login page
+    header("Location: index.php");
     exit();
 }
 
-// Fetch all rooms
-$sql = "SELECT * FROM rooms";
-$result = $conn->query($sql);
+// Fetch rooms based on search query
+$sql = "SELECT * FROM rooms WHERE location LIKE ? OR description LIKE ?";
+$stmt = $conn->prepare($sql);
+$search_param = "%$search%";
+$stmt->bind_param("ss", $search_param, $search_param);
+$stmt->execute();
+$result = $stmt->get_result();
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -55,15 +63,36 @@ $result = $conn->query($sql);
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard - Room Management</title>
     <link rel="stylesheet" href="dashboard.css">
+   
+    <script>
+        function confirmDelete(roomId) {
+            if (confirm("Are you sure you want to delete this room?")) {
+                window.location.href = "admin_dashboard.php?delete=" + roomId;
+            }
+        }
+    </script>
 </head>
 <body>
-    <div class="container">
-        <h1>Admin Dashboard</h1>
 
-        <!-- Logout Button -->
-        <form action="admin_dashboard.php" method="GET" style="text-align: right;">
-            <button type="submit" name="logout" class="logout-btn">Logout</button>
-        </form>
+    <!-- Navigation Bar -->
+    <div class="navbar">
+        <div class="logo">
+            <a href="admin_dashboard.php">Admin Dashboard</a>
+        </div>
+        <div class="search-bar">
+            <form action="admin_dashboard.php" method="GET" style="display: flex;">
+                <input type="text" name="search" placeholder="Search rooms..." value="<?php echo htmlspecialchars($search); ?>">
+                <button type="submit">Search</button>
+            </form>
+        </div>
+        <div class="nav-links">
+            <a href="add_room.php">Add Room</a>
+            <a href="admin_dashboard.php?logout=true" class="logout-btn">Logout</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <h1>Manage Rooms</h1>
 
         <?php if (isset($message)): ?>
             <p class="success"><?php echo $message; ?></p>
@@ -71,38 +100,37 @@ $result = $conn->query($sql);
             <p class="error"><?php echo $error; ?></p>
         <?php endif; ?>
 
-        <!-- Add Room Button -->
-        <div style="margin-bottom: 20px;">
-            <a href="add_room.php" class="add-room-btn">Add Room</a>
-        </div>
-
-        <!-- List of Rooms -->
-        <h2>Manage Rooms</h2>
-        
-        
         <div class="room-cards">
-        <a href="roomdetails.php" >
             <?php if ($result->num_rows > 0): ?>
                 <?php while ($row = $result->fetch_assoc()): ?>
                     <div class="room-card">
-                        <?php if (!empty($row['photo']) && file_exists($row['photo'])): ?>
-                            <img src="<?php echo htmlspecialchars($row['photo']); ?>" alt="Room Photo" class="room-photo">
-                        <?php else: ?>
-                            <img src="default_room.jpg" alt="Default Photo" class="room-photo">
-                        <?php endif; ?>
-                        <h3><?php echo htmlspecialchars($row['location']); ?></h3>
-                        <p><strong>Location:</strong> <?php echo htmlspecialchars($row['location']); ?></p>
-                        <p><strong>Monthly Rent:</strong> $<?php echo htmlspecialchars($row['rent']); ?></p>
-                        <p><strong>Number of Rooms:</strong> <?php echo htmlspecialchars($row['number_of_rooms']); ?></p>
-                        <p><strong>Description:</strong> <?php echo htmlspecialchars($row['description']); ?></p>
-                        <a href="admin_dashboard.php?delete=<?php echo $row['id']; ?>" class="delete-btn">Delete</a>
+                        <a href="roomdetails.php?id=<?php echo $row['id']; ?>">
+                            <?php if (!empty($row['photo']) && file_exists($row['photo'])): ?>
+                                <img src="<?php echo htmlspecialchars($row['photo']); ?>" alt="Room Photo">
+                            <?php else: ?>
+                                <img src="default_room.jpg" alt="Default Room Photo">
+                            <?php endif; ?>
+                            <h3><?php echo htmlspecialchars($row['location']); ?></h3>
+                            <p><strong>Monthly Rent:</strong> $<?php echo htmlspecialchars($row['rent']); ?></p>
+                            <p><strong>Number of Rooms:</strong> <?php echo htmlspecialchars($row['number_of_rooms']); ?></p>
+                            <p><strong>Description:</strong> <?php echo htmlspecialchars($row['description']); ?></p>
+                        </a>
+                        <div class="action-buttons">
+                            <a href="edit_room.php?edit=<?php echo $row['id']; ?>" class="edit-btn">Edit</a>
+                            <a href="#" onclick="confirmDelete(<?php echo $row['id']; ?>)" class="delete-btn">Delete</a>
+                        </div>
                     </div>
                 <?php endwhile; ?>
             <?php else: ?>
                 <p>No rooms available.</p>
             <?php endif; ?>
-            </a>
-        </div>  
+        </div>
     </div>
 </body>
 </html>
+
+<?php
+// Close the database connection
+$stmt->close();
+$conn->close();
+?>

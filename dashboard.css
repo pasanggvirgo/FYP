@@ -1,7 +1,7 @@
 /* General Styling */
 body {
     font-family: Arial, sans-serif;
-    background-color: #f5f5f5;
+    background-color: #ecf1e7;
     margin: 0;
     padding: 0;
     color: #333;
@@ -113,7 +113,7 @@ button:hover {
 
 /* Styling individual room cards */
 .room-card {
-    background: #d6e7d5; /* Light green for softer look */
+    background: #dae7da; /* Light green for softer look */
     padding: 20px;
     border-radius: 8px;
     width: calc(20% - 20px);
@@ -129,7 +129,7 @@ button:hover {
 
 .room-card img {
     width: 100%;
-    height: auto;
+    height: 150px;
     aspect-ratio: 16 / 9; /* Keeps image ratio */
     object-fit: cover; /* Ensures image fills the space without distortion */
     border-radius: 4px;
@@ -171,6 +171,18 @@ button:hover {
     font-weight: bold;
     text-decoration: none;
     transition: background-color 0.3s ease-in-out;
+}
+.edit-btn {
+    display: inline-block;
+    padding: 8px 12px;
+    background-color: #4915cd;
+    color: white;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    font-weight: bold;
+    text-decoration: none;
+    transition: background-color 0.3s ease-in-out;
+
 }
 
 .delete-btn:hover {
@@ -236,4 +248,34 @@ button:hover {
 h1, h2 {
     text-align: center;
     color: #333;
+}
+.search-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px; /* Spacing between input and button */
+}
+
+.search-bar input {
+    width: 200px;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    margin-right:10px;
+}
+
+.search-bar button {
+    padding: 8px 15px;
+    background-color: #007BFF;
+    color: white;
+    border: none;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+.search-bar button:hover {
+    background-color: #0056b3;
+}
+
+a{
+    text-decoration: none;
 }
