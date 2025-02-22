@@ -13,7 +13,7 @@ body {
 /* Login and Signup Containers */
 .login-container,
 .signup-container {
-    background: #d6e7d5; /* Light green for softer look */
+    background: #e0ebdf; /* Light green for softer look */
     padding: 30px;
     border-radius: 10px;
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15); /* Softer shadow for modern design */

@@ -43,7 +43,7 @@ if (isset($_GET['id']) && is_numeric($_GET['id'])) {
     <style>
         body {
             font-family: Arial, sans-serif;
-            background-color: #f4f7f6;
+            background-color: #ecf1e7;
             margin: 0;
             padding: 0;
         }
@@ -51,7 +51,7 @@ if (isset($_GET['id']) && is_numeric($_GET['id'])) {
             max-width: 900px;
             margin: 40px auto;
             padding: 20px;
-            background-color: #fff;
+            background: #dae7da; /* Light green for softer look */
             border-radius: 8px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
@@ -62,7 +62,7 @@ if (isset($_GET['id']) && is_numeric($_GET['id'])) {
         .room-details {
             text-align: center;
             padding: 20px;
-            background-color: #fafafa;
+            background-color:rgb(221, 243, 213);
             border-radius: 8px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
         }

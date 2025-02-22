@@ -114,7 +114,6 @@ $result = $stmt->get_result();
                             <h3><?php echo htmlspecialchars($row['location']); ?></h3>
                             <p><strong>Monthly Rent:</strong> $<?php echo htmlspecialchars($row['rent']); ?></p>
                             <p><strong>Number of Rooms:</strong> <?php echo htmlspecialchars($row['number_of_rooms']); ?></p>
-                            <p><strong>Description:</strong> <?php echo htmlspecialchars($row['description']); ?></p>
                         </a>
                         <div class="action-buttons">
                             <a href="edit_room.php?id=<?php echo $row['id']; ?>" class="edit-btn">Edit</a>
@@ -127,6 +126,7 @@ $result = $stmt->get_result();
             <?php endif; ?>
         </div>
     </div>
+    
 </body>
 </html>
 

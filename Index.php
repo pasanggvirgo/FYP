@@ -1,12 +1,11 @@
 <?php
-// Start session
 session_start();
 
 // Check if form is submitted
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $username = $_POST['username'];
     $password = $_POST['password'];
-    $role = $_POST['role']; // Capture role from the form
+    $role = $_POST['role'];
 
     // Database connection
     $conn = new mysqli("localhost", "root", "", "fyp");
@@ -14,24 +13,25 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         die("Connection failed: " . $conn->connect_error);
     }
 
-    // Query to check user with role
+    // Query to check user with role and verification
     $sql = "SELECT * FROM users WHERE username = ? AND role = ?";
     $stmt = $conn->prepare($sql);
     if (!$stmt) {
         die("Error in SQL statement preparation: " . $conn->error);
     }
-    $stmt->bind_param("ss", $username, $role); // Bind both username and role
+    $stmt->bind_param("ss", $username, $role);
     $stmt->execute();
     $result = $stmt->get_result();
 
-    // Check if user with the correct role exists
     if ($result->num_rows > 0) {
         $row = $result->fetch_assoc();
 
-        // Verify password
-        if (password_verify($password, $row['password'])) {
+        // Check if email is verified
+        if ($row['is_verified'] == 0) {
+            $error = "Please verify your email before logging in.";
+        } elseif (password_verify($password, $row['password'])) {
             $_SESSION['username'] = $username;
-            $_SESSION['role'] = $row['role']; // Store the role from the database
+            $_SESSION['role'] = $row['role'];
 
             // Redirect based on role
             if ($row['role'] === "admin") {
@@ -47,7 +47,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $error = "Invalid username, password, or role.";
     }
 
-    // Close connections
     $stmt->close();
     $conn->close();
 }
@@ -63,12 +62,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 <body>
     <div class="login-container">
         <h2>Login Page</h2>
-        <!-- Display Error Message -->
         <?php if (isset($error)): ?>
             <p class="error"><?php echo $error; ?></p>
         <?php endif; ?>
-
-        <!-- Login Form -->
         <form action="index.php" method="POST">
             <div class="form-group">
                 <label for="username">Username:</label>
@@ -86,8 +82,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 </select>
             </div>
             <div class="form-group">
-                <a href="signup.php" id="login-link">Don't have an account?</a>  
-                <br><a href="signup.php" class="signup-link">Sign Up</a>
+                <a href="signup.php" class="signup-link">Don't have an account? Sign Up</a>
             </div>
             <div class="form-group">
                 <button type="submit">Login</button>

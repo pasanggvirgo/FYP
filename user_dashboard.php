@@ -42,17 +42,16 @@ $result = $stmt->get_result();
             </form>
         </div>
         <div class="nav-links">
-            <a href="add_room.php">Add Room</a>
-            <a href="logout.php">Logout</a>
+            <a href="#about-section">About Us</a>
+            <a href="add_room.php">Add Your Room</a>
+            <a href="index.php">Logout</a>
         </div>
     </div>
 
     <!-- Main Container -->
     <div class="container">
-        <h1>Welcome to User Dashboard</h1>
-
         <!-- Available Rooms Section -->
-        <h2>Available Rooms</h2>
+        <h2>Trending now</h2>
         <div class="room-cards">
             <?php if ($result->num_rows > 0): ?>
                 <?php while ($row = $result->fetch_assoc()): ?>
@@ -67,7 +66,6 @@ $result = $stmt->get_result();
                             <p><strong>Location:</strong> <?php echo htmlspecialchars($row['location']); ?></p>
                             <p><strong>Monthly Rent:</strong> $<?php echo htmlspecialchars($row['rent']); ?></p>
                             <p><strong>Number of Rooms:</strong> <?php echo htmlspecialchars($row['number_of_rooms']); ?></p>
-                            <p><strong>Description:</strong> <?php echo htmlspecialchars($row['description']); ?></p>
                         </a>
                     </div>
                 <?php endwhile; ?>
@@ -76,7 +74,35 @@ $result = $stmt->get_result();
             <?php endif; ?>
         </div>
 
-      
+        <br><br><br><br>
+    </div>
+    <div id="about-section">
+    <div class="about-container">
+        <div class="about-text">
+            <h2>About Kothamandu</h2>
+            <p>
+                Welcome to <strong>Kothamandu.com</strong>, your ultimate destination for finding the perfect rental rooms in Nepal! 
+                Whether you’re a student, professional, or traveler, our platform connects you with verified landlords and 
+                helps you discover comfortable and affordable accommodations with ease. Our user-friendly interface allows 
+                you to filter searches based on location, price, and amenities, ensuring you find a home that meets your needs. 
+                Join thousands of satisfied users and let Kothamandu simplify your room-hunting experience today!
+            </p>
+        </div>
+        <div class="about-image">
+            <img src="images.jpg" alt="Kothamandu Room Rentals">
+        </div>
+    </div>
+</div>
+
+        <!-- Footer Section -->
+        <div class="footer">
+        <p>&copy; 2025 Kothamandu.com | All Rights Reserved</p>
+        <p>
+            <a href="#">Privacy Policy</a>
+            <a href="#">Terms of Service</a>
+            <a href="#">Contact Us</a>
+        </p>
+        </div>
     </div>
 </body>
 </html>

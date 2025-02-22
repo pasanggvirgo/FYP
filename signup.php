@@ -1,43 +1,70 @@
 <?php
-// Start session
 session_start();
 
-// Check if form is submitted
+
+require 'PHPMailer-master/src/PHPMailer.php';
+require 'PHPMailer-master/src/SMTP.php';
+require 'PHPMailer-master/src/Exception.php';
+
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\Exception;
+
+
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $username = $_POST['name'];
+    $username = $_POST['username'];
     $email = $_POST['email'];
     $password = $_POST['password'];
     $confirm_password = $_POST['confirm_password'];
-    $role = $_POST['role']; // Value will be either 'user' or 'admin'
+    $role = $_POST['role'];
 
-    // Validate input
     if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $error = "Invalid email format.";
     } elseif ($password !== $confirm_password) {
         $error = "Passwords do not match.";
     } else {
-        // Hash the password for security
         $hashed_password = password_hash($password, PASSWORD_DEFAULT);
+        $token = bin2hex(random_bytes(32)); // Generate unique verification token
 
-        // Database connection (update with your database credentials)
         $conn = new mysqli("localhost", "root", "", "fyp");
 
-        // Check connection
         if ($conn->connect_error) {
             die("Connection failed: " . $conn->connect_error);
         }
 
-        // Insert user data into database
-        $sql = "INSERT INTO users (username, email, password, role) VALUES (?, ?, ?, ?)";
+        // Insert user data with token
+        $sql = "INSERT INTO users (username, email, password, role, token, is_verified) VALUES (?, ?, ?, ?, ?, 0)";
         $stmt = $conn->prepare($sql);
-        $stmt->bind_param("ssss", $username, $email, $hashed_password, $role);
+        $stmt->bind_param("sssss", $username, $email, $hashed_password, $role, $token);
 
         if ($stmt->execute()) {
-            // Redirect to login page with success message
-            header("Location: index.php?signup_success=1");
-            exit();
+            // Send verification email
+            $verification_link = "http://yourwebsite.com/fyp/verify.php?token=$token";
+            $mail = new PHPMailer(true);
+            try {
+                $mail->isSMTP();
+                $mail->Host = 'smtp.gmail.com';
+                $mail->SMTPAuth = true;
+                $mail->Username = 'your-email@gmail.com';
+                $mail->Password = 'your-email-password'; // Use App Password for security
+                $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+                $mail->Port = 587;
+
+                $mail->setFrom('your-email@gmail.com', 'Room Renting');
+                $mail->addAddress($email, $username);
+                $mail->Subject = 'Email Verification';
+                $mail->Body = "Click the link below to verify your email:\n$verification_link";
+
+                if ($mail->send()) {
+                    header("Location: index.php?verify_email=1");
+                    exit();
+                } else {
+                    $error = "Could not send verification email.";
+                }
+            } catch (Exception $e) {
+                $error = "Email error: " . $mail->ErrorInfo;
+            }
         } else {
-            $error = "Error: Could not complete signup. Please try again.";
+            $error = "Error: Could not complete signup.";
         }
 
         $stmt->close();
@@ -56,24 +83,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 <body>
     <div class="signup-container">
         <h2>Signup Page</h2>
-
-        <!-- Success Message -->
-        <?php if (isset($_GET['signup_success']) && $_GET['signup_success'] == 1): ?>
-            <p class="success">Signup successful! You can now log in.</p>
-        <?php endif; ?>
-
-        <!-- Error Message -->
         <?php if (isset($error)): ?>
             <p class="error"><?php echo $error; ?></p>
         <?php endif; ?>
-
-        <form action="/fyp/signup.php" method="POST">
+        <form action="signup.php" method="POST">
             <div class="form-group">
-                <label for="name">UserName:</label>
-                <input type="text" id="name" name="name" required>
+                <label for="username">UserName:</label>
+                <input type="text" id="username" name="username" required>
             </div>
             <div class="form-group">
-                <label for="email">Gmail:</label>
+                <label for="email">Email:</label>
                 <input type="email" id="email" name="email" required>
             </div>
             <div class="form-group">
@@ -95,9 +114,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 <button type="submit">Sign Up</button>
             </div>
         </form>
-        <div class="form-group">
-            <a href="index.php" class="login-link">Back to Login</a>
-        </div>
     </div>
 </body>
 </html>
