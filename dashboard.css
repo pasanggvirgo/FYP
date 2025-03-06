@@ -302,16 +302,14 @@ a{
     display: flex;
     justify-content: center;
     align-items: center;
-    background-color: #f9f9f9;
     padding: 50px 0;
 }
 
 .about-container {
     width: 80%;
     display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
+    justify-content: space-between; /* Aligns text and image side by side */
+    align-items: center; /* Vertically centers them */
 }
 
 .about-text {
@@ -338,7 +336,7 @@ a{
 
 .about-image img {
     width: 100%;
-    max-width: 500px;
+    max-width: 500px; /* Adjust based on desired image size */
     border-radius: 10px;
     box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
 }

@@ -1,77 +1,83 @@
 <?php
 session_start();
 
+include('smtp/PHPMailerAutoload.php');
 
-require 'PHPMailer-master/src/PHPMailer.php';
-require 'PHPMailer-master/src/SMTP.php';
-require 'PHPMailer-master/src/Exception.php';
-
-use PHPMailer\PHPMailer\PHPMailer;
-use PHPMailer\PHPMailer\Exception;
-
+$conn = new mysqli("localhost", "root", "", "fyp");
+if ($conn->connect_error) {
+    die("Connection failed: " . $conn->connect_error);
+}
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $username = $_POST['username'];
-    $email = $_POST['email'];
+    $username = trim($_POST['username']);
+    $email = trim($_POST['email']);
     $password = $_POST['password'];
     $confirm_password = $_POST['confirm_password'];
     $role = $_POST['role'];
 
+    // Input validation
     if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $error = "Invalid email format.";
     } elseif ($password !== $confirm_password) {
         $error = "Passwords do not match.";
     } else {
-        $hashed_password = password_hash($password, PASSWORD_DEFAULT);
-        $token = bin2hex(random_bytes(32)); // Generate unique verification token
+        // Check if username or email exists
+        $check_sql = "SELECT * FROM users WHERE username = ? OR email = ?";
+        $check_stmt = $conn->prepare($check_sql);
+        $check_stmt->bind_param("ss", $username, $email);
+        $check_stmt->execute();
+        $result = $check_stmt->get_result();
 
-        $conn = new mysqli("localhost", "root", "", "fyp");
-
-        if ($conn->connect_error) {
-            die("Connection failed: " . $conn->connect_error);
-        }
-
-        // Insert user data with token
-        $sql = "INSERT INTO users (username, email, password, role, token, is_verified) VALUES (?, ?, ?, ?, ?, 0)";
-        $stmt = $conn->prepare($sql);
-        $stmt->bind_param("sssss", $username, $email, $hashed_password, $role, $token);
-
-        if ($stmt->execute()) {
-            // Send verification email
-            $verification_link = "http://yourwebsite.com/fyp/verify.php?token=$token";
-            $mail = new PHPMailer(true);
-            try {
-                $mail->isSMTP();
-                $mail->Host = 'smtp.gmail.com';
-                $mail->SMTPAuth = true;
-                $mail->Username = 'your-email@gmail.com';
-                $mail->Password = 'your-email-password'; // Use App Password for security
-                $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
-                $mail->Port = 587;
-
-                $mail->setFrom('your-email@gmail.com', 'Room Renting');
-                $mail->addAddress($email, $username);
-                $mail->Subject = 'Email Verification';
-                $mail->Body = "Click the link below to verify your email:\n$verification_link";
-
-                if ($mail->send()) {
-                    header("Location: index.php?verify_email=1");
-                    exit();
-                } else {
-                    $error = "Could not send verification email.";
-                }
-            } catch (Exception $e) {
-                $error = "Email error: " . $mail->ErrorInfo;
-            }
+        if ($result->num_rows > 0) {
+            $error = "Username or email already exists. Please choose a different one.";
         } else {
-            $error = "Error: Could not complete signup.";
-        }
+            // Hash the password
+            $hashed_password = password_hash($password, PASSWORD_DEFAULT);
+            $token = bin2hex(random_bytes(32));
 
-        $stmt->close();
-        $conn->close();
+            // Insert user into the database
+            $sql = "INSERT INTO users (username, email, password, role, token, is_verified) VALUES (?, ?, ?, ?, ?, 0)";
+            $stmt = $conn->prepare($sql);
+            $stmt->bind_param("sssss", $username, $email, $hashed_password, $role, $token);
+
+            if ($stmt->execute()) {
+                $verification_link = "http://localhost/fyp/verify.php?token=$token";
+                $mail = new PHPMailer(true);
+                try {
+                    $mail->isSMTP();
+                    $mail->Host = 'smtp.gmail.com';
+                    $mail->SMTPAuth = true;
+                    $mail->Username = 'sherpapasang877@gmail.com';
+                    $mail->Password = 'rlch gavl pjwy svsd';
+                    $mail->SMTPSecure = 'tls';
+                    $mail->Port = 587;
+
+                    $mail->setFrom('sherpapasang877@gmail.com', 'Kothamandu.com');
+                    $mail->addAddress($email, $username);
+                    $mail->Subject = 'Email Verification';
+                    $mail->Body = "Click the link below to verify your email:\n$verification_link";
+
+                    if ($mail->send()) {
+                        echo "<script>alert('Verification link sent on your mail. please verify to login.'); window.location='index.php';</script>";
+                        exit();
+                    } else {
+                        $error = "Could not send verification email.";
+                    }
+                } catch (Exception $e) {
+                    $error = "Email error: " . $mail->ErrorInfo;
+                }
+            } else {
+                $error = "Error: Could not complete signup.";
+            }
+            $stmt->close();
+        }
+        $check_stmt->close();
     }
 }
+
+$conn->close();
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>

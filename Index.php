@@ -1,9 +1,8 @@
 <?php
 session_start();
 
-// Check if form is submitted
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $username = $_POST['username'];
+    $username = trim($_POST['username']);
     $password = $_POST['password'];
     $role = $_POST['role'];
 
@@ -13,8 +12,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         die("Connection failed: " . $conn->connect_error);
     }
 
-    // Query to check user with role and verification
-    $sql = "SELECT * FROM users WHERE username = ? AND role = ?";
+    // Query to check user credentials
+    $sql = "SELECT id, username, password, role, is_verified FROM users WHERE username = ? AND role = ?";
     $stmt = $conn->prepare($sql);
     if (!$stmt) {
         die("Error in SQL statement preparation: " . $conn->error);
@@ -30,7 +29,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         if ($row['is_verified'] == 0) {
             $error = "Please verify your email before logging in.";
         } elseif (password_verify($password, $row['password'])) {
-            $_SESSION['username'] = $username;
+            // Store user data in session
+            $_SESSION['user_id'] = $row['id']; // ✅ Important!
+            $_SESSION['username'] = $row['username'];
             $_SESSION['role'] = $row['role'];
 
             // Redirect based on role
@@ -51,6 +52,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $conn->close();
 }
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -65,7 +67,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         <?php if (isset($error)): ?>
             <p class="error"><?php echo $error; ?></p>
         <?php endif; ?>
-        <form action="index.php" method="POST">
+        <form action="" method="POST"> <!-- ✅ Submit to the same page -->
             <div class="form-group">
                 <label for="username">Username:</label>
                 <input type="text" id="username" name="username" required>

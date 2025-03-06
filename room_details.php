@@ -129,7 +129,7 @@ if (isset($_GET['id']) && is_numeric($_GET['id'])) {
 
         <!-- Back to Dashboard Button -->
         <div>
-            <a href="admin_dashboard.php" class="back-btn">Back to Dashboard</a>
+            <a href="user_dashboard.php" class="back-btn">Back to Dashboard</a>
         </div>
     </div>
 </body>
