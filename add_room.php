@@ -127,7 +127,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['add_room'])) {
         <!-- Add Room Form -->
         <form action="add_room.php" method="POST" enctype="multipart/form-data">
             <div class="form-group">
-                <label for="location">Location:</label>
+                <label for="location">Detailed Location:</label>
                 <input type="text" id="location" name="location" required>
             </div>
             <div class="form-group">

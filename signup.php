@@ -119,7 +119,12 @@ $conn->close();
             <div class="form-group">
                 <button type="submit">Sign Up</button>
             </div>
+            
         </form>
+        <div id="loginbutton " class="form-group">
+               <a href="index.php"> <button>Back to login Page</button></a>
+            </div>
     </div>
+    
 </body>
 </html>
