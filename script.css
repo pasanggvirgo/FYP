@@ -1,7 +1,7 @@
 /* General Body Styling */
 body {
     font-family: 'Arial', sans-serif;
-    background-color: #f0f8ea; /* Softer background */
+    background-color: #ecf1e7; /* Softer background */
     margin: 0;
     padding: 0;
     display: flex;
@@ -13,10 +13,10 @@ body {
 /* Login and Signup Containers */
 .login-container,
 .signup-container {
-    background: #e0ebdf; /* Light green for softer look */
+    background-color: #ecf1e7;
     padding: 30px;
     border-radius: 10px;
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15); /* Softer shadow for modern design */
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15); /* Softer shadow for modern design */
     width: 100%;
     max-width: 400px;
     transition: transform 0.2s ease-in-out;

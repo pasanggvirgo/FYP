@@ -6,7 +6,15 @@ if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
 
+// Ensure the user is logged in
+if (!isset($_SESSION['user_id'])) {
+    header("Location: index.php");
+    exit();
+}
+
 $user_id = $_SESSION['user_id'];
+
+// Fetch favorite rooms
 $sql = "SELECT rooms.* FROM rooms JOIN favorites ON rooms.id = favorites.room_id WHERE favorites.user_id = ?";
 $stmt = $conn->prepare($sql);
 $stmt->bind_param("i", $user_id);
@@ -18,20 +26,78 @@ $result = $stmt->get_result();
 <html lang="en">
 <head>
     <title>My Favorites</title>
+    <link rel="stylesheet" href="dashboard.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
 <body>
+
+<div class="main-container">
     <h1>My Favorite Rooms</h1>
     <div class="room-cards">
-        <?php while ($row = $result->fetch_assoc()): ?>
-            <div class="room-card">
+        <?php if ($result->num_rows > 0): ?>
+            <?php while ($row = $result->fetch_assoc()): ?>
+                <div class="room-card">
                 <a href="room_details.php?id=<?php echo $row['id']; ?>">
-                    <img src="<?php echo $row['photo'] ?: 'default-room.jpg'; ?>" alt="Room Photo">
-                    <h3><?php echo htmlspecialchars($row['location']); ?></h3>
-                    <p><strong>Monthly Rent:</strong> $<?php echo htmlspecialchars($row['rent']); ?></p>
-                    <p><strong>Number of Rooms:</strong> <?php echo htmlspecialchars($row['number_of_rooms']); ?></p>
+                    <?php 
+                    // Decode the JSON array of photos
+                    $photos = json_decode($row['photos'], true);
+                    if (!empty($photos) && isset($photos[0])) {
+                        // Display the first photo
+                        $first_photo = htmlspecialchars($photos[0]);
+                        echo "<img src='$first_photo' alt='Room Photo'>";
+                    } else {
+                        // Default photo if no photos are available
+                        echo "<img src='default-room.jpg' alt='Default Room Photo'>";
+                    }
+                    ?>
+                    <h3><?php echo "ID ".htmlspecialchars($row['id']).", ".htmlspecialchars($row['location']).", ".htmlspecialchars($row['property_type']); ?></h3>
+                    <p><strong>📍 Location:</strong> <?php echo htmlspecialchars($row['location']); ?></p>
+                    <p style="color:red;"><strong>💰 Monthly Rent:</strong> Rs.<?php echo htmlspecialchars($row['rent']); ?></p>
+                    <p><strong>🏠Property Type:</strong> <?php echo htmlspecialchars($row['property_type']); ?></p>
                 </a>
+
+                <button class="favorite-btn" data-room-id="<?php echo $row['id']; ?>">
+                    <?php
+                    $fav_stmt = $conn->prepare("SELECT * FROM favorites WHERE user_id = ? AND room_id = ?");
+                    $fav_stmt->bind_param("ii", $user_id, $row['id']);
+                    $fav_stmt->execute();
+                    $fav_result = $fav_stmt->get_result();
+                    $is_favorite = $fav_result->num_rows > 0;
+                    echo $is_favorite ? "❌ Remove from Favorites" : "❤️ Add to Favorites";
+                    ?>
+                </button>
             </div>
-        <?php endwhile; ?>
+            <?php endwhile; ?>
+        <?php else: ?>
+            <p>No favorite rooms found.</p>
+        <?php endif; ?>
     </div>
+</div id="backbtn">
+<a href="user_dashboard.php"> <button>Back to Dashboard </button></a>
+
+<script>
+$(document).ready(function() {
+    $(".favorite-btn").click(function() {
+        var button = $(this);
+        var roomId = button.data("room-id");
+
+        $.ajax({
+            url: "favorite_handler.php",
+            type: "POST",
+            data: { room_id: roomId, action: "remove" },
+            dataType: "json",
+            success: function(response) {
+                if (response.status === "removed") {
+                    button.closest(".room-card").fadeOut();
+                }
+            },
+            error: function() {
+                alert("An error occurred. Please try again.");
+            }
+        });
+    });
+});
+</script>
+
 </body>
 </html>

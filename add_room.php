@@ -1,7 +1,5 @@
 <?php
-// Start session
 session_start();
-
 include('smtp/PHPMailerAutoload.php');
 
 // Database connection
@@ -10,16 +8,14 @@ if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
 
-// Initialize error messages
 $error = null;
 $success = null;
 
-// Check if user is logged in
+// Ensure user is logged in
 if (!isset($_SESSION['user_id'])) {
     die("You must be logged in to add a room.");
 }
 
-// Get user details from session
 $user_id = $_SESSION['user_id'];
 $user_query = "SELECT username, email FROM users WHERE id=?";
 $stmt = $conn->prepare($user_query);
@@ -36,54 +32,69 @@ $username = $user['username'];
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['add_room'])) {
     $location = $_POST['location'];
     $rent = $_POST['rent'];
-    $number_of_rooms = $_POST['number_of_rooms'];
     $description = $_POST['description'];
-    $photo_path = null;
+    $seller_contact = $_POST['seller_contact'];
+    $property_type = $_POST['property_type'];
+    $furnishing_status = $_POST['furnishing_status'];
+    $photo_paths = [];
 
-    // Handle file upload
-    if (isset($_FILES['photo']) && $_FILES['photo']['error'] === 0) {
+    // Handle multiple file uploads
+    if (isset($_FILES['photos']) && count($_FILES['photos']['name']) > 0) {
         $target_dir = "uploads/";
         if (!is_dir($target_dir)) {
             mkdir($target_dir, 0777, true);
         }
 
-        $photo_path = $target_dir . basename($_FILES['photo']['name']);
-        $imageFileType = strtolower(pathinfo($photo_path, PATHINFO_EXTENSION));
+        foreach ($_FILES['photos']['name'] as $key => $photo_name) {
+            $tmp_name = $_FILES['photos']['tmp_name'][$key];
+            $imageFileType = strtolower(pathinfo($photo_name, PATHINFO_EXTENSION));
+            $unique_name = $target_dir . uniqid() . "." . $imageFileType;
 
-        // Validate file
-        $check = getimagesize($_FILES['photo']['tmp_name']);
-        if ($check === false) {
-            $error = "The uploaded file is not a valid image.";
-        } elseif (!in_array($imageFileType, ['jpg', 'jpeg', 'png', 'gif'])) {
-            $error = "Only JPG, JPEG, PNG, and GIF formats are allowed.";
-        } elseif ($_FILES['photo']['size'] > 5000000) {
-            $error = "The file size must not exceed 5MB.";
-        } elseif (!move_uploaded_file($_FILES['photo']['tmp_name'], $photo_path)) {
-            $error = "Failed to upload the photo. Check file permissions.";
+            // Validate file
+            $check = getimagesize($tmp_name);
+            if ($check === false) {
+                $error = "One of the uploaded files is not a valid image.";
+                break;
+            } elseif (!in_array($imageFileType, ['jpg', 'jpeg', 'png', 'gif'])) {
+                $error = "Only JPG, JPEG, PNG, and GIF formats are allowed.";
+                break;
+            } elseif ($_FILES['photos']['size'][$key] > 5000000) {
+                $error = "Each file must not exceed 5MB.";
+                break;
+            } elseif (move_uploaded_file($tmp_name, $unique_name)) {
+                $photo_paths[] = $unique_name;
+            } else {
+                $error = "Failed to upload some images.";
+                break;
+            }
         }
     }
 
     // Insert data into the database if no errors
-    if (!isset($error)) {
-        $sql = "INSERT INTO rooms (location, rent, number_of_rooms, description, photo, user_id) VALUES (?, ?, ?, ?, ?, ?)";
+    if (!$error) {
+        $photo_json = json_encode($photo_paths);
+
+        $sql = "INSERT INTO rooms (location, rent, description, photos, user_id, seller_contact, property_type, furnishing_status) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+
         $stmt = $conn->prepare($sql);
-        $stmt->bind_param("sdissi", $location, $rent, $number_of_rooms, $description, $photo_path, $user_id);
+        $stmt->bind_param("sdsssiss", $location, $rent, $description, $photo_json, $user_id, $seller_contact, $property_type, $furnishing_status);
 
         if ($stmt->execute()) {
             $success = "Room added successfully!";
 
-            // **Send Email Notification**
+            // Send Email Notification
             $mail = new PHPMailer(true);
             try {
                 $mail->isSMTP();
                 $mail->Host = 'smtp.gmail.com';
                 $mail->SMTPAuth = true;
-                $mail->Username = 'sherpapasang877@gmail.com'; // Replace with your email
-                $mail->Password = 'rlch gavl pjwy svsd'; // Replace with your email password
+                $mail->Username = 'sherpapasang877@gmail.com';
+                $mail->Password = 'rlch gavl pjwy svsd';
                 $mail->SMTPSecure = 'tls';
                 $mail->Port = 587;
 
-                $mail->setFrom('sherpapasang877@gmail.com', 'kothamandu.com'); // Replace with your email
+                $mail->setFrom('sherpapasang877@gmail.com', 'kothamandu.com');
                 $mail->addAddress($user_email, $username);
                 $mail->Subject = 'Room Successfully Uploaded';
                 $mail->Body = "Dear $username,\n\nYour room has been successfully uploaded to our platform!\n\nLocation: $location\nRent: $$rent per month\n\nThank you for using our service!\n\nBest regards,\nkothamandu.com";
@@ -110,7 +121,149 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['add_room'])) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Add Room</title>
-    <link rel="stylesheet" href="dashboard.css">
+    <style>
+    /* General Page Styles */
+    body {
+        font-family: 'Arial', sans-serif;
+        background-color: #f4f4f4;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+    }
+
+    .container {
+        background: #ffffff;
+        padding: 25px;
+        border-radius: 10px;
+        box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+        max-width: 500px;
+        width: 100%;
+        text-align: center;
+    }
+
+    h1 {
+        color: #333;
+        margin-bottom: 20px;
+        font-size: 22px;
+    }
+
+    /* Form Styling */
+    form {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .form-group {
+        text-align: left;
+    }
+
+    input, select {
+        width: 100%;
+        padding: 10px;
+        margin-top: 5px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        font-size: 14px;
+        transition: 0.3s;
+    }
+
+    input:focus, select:focus {
+        border-color: #007bff;
+        outline: none;
+        box-shadow: 0px 0px 5px rgba(0, 123, 255, 0.5);
+    }
+
+    /* File Input Styling */
+    input[type="file"] {
+        border: none;
+        padding: 5px;
+    }
+
+    /* Button Styles */
+    button {
+        background-color: #007bff;
+        color: white;
+        border: none;
+        padding: 12px;
+        font-size: 16px;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: 0.3s;
+    }
+
+    button:hover {
+        background-color: #0056b3;
+    }
+
+    /* Success & Error Messages */
+    .success {
+        color: #155724;
+        background-color: #d4edda;
+        padding: 10px;
+        border-radius: 5px;
+        margin-bottom: 15px;
+    }
+
+    .error {
+        color: #721c24;
+        background-color: #f8d7da;
+        padding: 10px;
+        border-radius: 5px;
+        margin-bottom: 15px;
+    }
+
+    /* Back to Dashboard Button */
+    .back-btn {
+        display: inline-block;
+        background: #6c757d;
+        color: white;
+        text-decoration: none;
+        padding: 10px 15px;
+        border-radius: 5px;
+        transition: 0.3s;
+    }
+
+    .back-btn:hover {
+        background: #5a6268;
+    }
+            /* Description Styling */
+textarea {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 14px;
+    font-family: 'Arial', sans-serif;
+    resize: vertical; /* Allow resizing only vertically */
+    transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+textarea:focus {
+    border-color: #007bff;
+    outline: none;
+    box-shadow: 0px 0px 5px rgba(0, 123, 255, 0.5);
+}
+
+label {
+    font-weight: bold;
+    color: #333;
+    font-size: 14px;
+}
+
+
+    /* Mobile Responsive */
+    @media (max-width: 500px) {
+        .container {
+            width: 90%;
+            padding: 20px;
+        }
+    }
+</style>
+
 </head>
 <body>
     <div class="container">
@@ -130,26 +283,51 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['add_room'])) {
                 <label for="location">Detailed Location:</label>
                 <input type="text" id="location" name="location" required>
             </div>
+
             <div class="form-group">
                 <label for="rent">Monthly Rent:</label>
                 <input type="number" id="rent" name="rent" step="0.01" required>
             </div>
+
             <div class="form-group">
-                <label for="number_of_rooms">Number of Rooms:</label>
-                <input type="number" id="number_of_rooms" name="number_of_rooms" required>
+                <label for="seller_contact">Seller Contact Number:</label>
+                <input type="text" id="seller_contact" name="seller_contact" pattern="[0-9]{10,15}" required>
+            </div>
+
+            <div class="form-group">
+                <label for="property_type">Property Type:</label>
+                <select id="property_type" name="property_type" required>
+                    <option value="1 BHK">1 BHK</option>
+                    <option value="2 BHK">2 BHK</option>
+                    <option value="3 BHK">3 BHK</option>
+                    <option value="Shutters">Shutters</option>
+                    <option value="Commercial Property">Commercial Property</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="furnishing_status">Furnishing Status:</label>
+                <select id="furnishing_status" name="furnishing_status" required>
+                    <option value="Furnished">Furnished</option>
+                    <option value="Semi-Furnished">Semi-Furnished</option>
+                    <option value="Unfurnished">Unfurnished</option>
+                </select>
             </div>
             <div class="form-group">
-                <label for="description">Description:</label>
-                <textarea id="description" name="description" rows="4" required></textarea>
+               <label for="description">Description:</label>
+               <textarea id="description" name="description" rows="1" required></textarea>
             </div>
+
+            
+
             <div class="form-group">
-                <label for="photo">Room Photo:</label>
-                <input required type="file" id="photo" name="photo" accept="image/*">
+                <label for="photos">Room Photos (Multiple):</label>
+                <input type="file" id="photos" name="photos[]" accept="image/*" multiple required>
             </div>
+
             <button type="submit" name="add_room">Add Room</button>
         </form>
 
-        <!-- Back to Dashboard Button -->
         <div>
             <a href="user_dashboard.php" class="back-btn">Back to Dashboard</a>
         </div>
@@ -158,6 +336,5 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['add_room'])) {
 </html>
 
 <?php
-// Close the database connection
 $conn->close();
 ?>
