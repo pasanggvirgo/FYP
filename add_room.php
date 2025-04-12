@@ -16,7 +16,19 @@ if (!isset($_SESSION['user_id'])) {
     die("You must be logged in to add a room.");
 }
 
-$user_id = $_SESSION['user_id'];
+$user_id = $_SESSION['user_id'];$fav_count = 0;
+if ($user_id) {
+    $fav_stmt = $conn->prepare("SELECT COUNT(*) AS total FROM favorites WHERE user_id = ?");
+    $fav_stmt->bind_param("i", $user_id);
+    $fav_stmt->execute();
+    $fav_result = $fav_stmt->get_result();
+    if ($row = $fav_result->fetch_assoc()) {
+        $fav_count = $row['total'];
+    }
+    $fav_stmt->close();
+}
+
+
 $user_query = "SELECT username, email FROM users WHERE id=?";
 $stmt = $conn->prepare($user_query);
 $stmt->bind_param("i", $user_id);
@@ -81,7 +93,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['add_room'])) {
         $stmt->bind_param("sdsssiss", $location, $rent, $description, $photo_json, $user_id, $seller_contact, $property_type, $furnishing_status);
 
         if ($stmt->execute()) {
-            $success = "Room added successfully!";
+            $success = "Room added successfully for verification!";
 
             // Send Email Notification
             $mail = new PHPMailer(true);
@@ -121,11 +133,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['add_room'])) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Add Room</title>
+    <link rel="stylesheet" href="dashboard.css">
+
     <style>
     /* General Page Styles */
     body {
         font-family: 'Arial', sans-serif;
-        background-color: #f4f4f4;
+        background-color:rgb(255, 255, 255);
         margin: 0;
         padding: 0;
         display: flex;
@@ -135,12 +149,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['add_room'])) {
     }
 
     .container {
-        background: #ffffff;
+        background:rgb(255, 255, 255);
         padding: 25px;
         border-radius: 10px;
         box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
         max-width: 500px;
         width: 100%;
+        margin-left: 300px;
         text-align: center;
     }
 
@@ -266,6 +281,25 @@ label {
 
 </head>
 <body>
+<div class="main-container">
+<div class="navbar">
+        <div class="logo">
+            <a href="user_dashboard.php"><img id="homeimg" class="icon" src="house.png"></a>
+        </div>
+        <div class="nav-links">
+            <a class="nav-links" href="#about-section">About Us</a>
+            <a class="nav-links" href="add_room.php">✚ Add Room</a>
+            <?php if ($user_id): ?>
+                <a class="nav-links" href="favorites.php">❤️ Favourites <span style="color:red;">(<?php echo $fav_count; ?>)</span></a>
+                <a class="nav-links" href="myuploads.php">📂 My Uploads</a>
+                <a class="nav-links" href="index.php">👤 Logout</a>
+            <?php else: ?>
+                <a class="nav-links" href="index.php">👤 Log in</a>
+            <?php endif; ?>
+        </div>
+    </div>
+
+    
     <div class="container">
         <h1>Add Room</h1>
 
@@ -332,6 +366,7 @@ label {
             <a href="user_dashboard.php" class="back-btn">Back to Dashboard</a>
         </div>
     </div>
+</div>
 </body>
 </html>
 

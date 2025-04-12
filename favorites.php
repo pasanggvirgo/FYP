@@ -13,6 +13,17 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 $user_id = $_SESSION['user_id'];
+$fav_count = 0;
+if ($user_id) {
+    $fav_stmt = $conn->prepare("SELECT COUNT(*) AS total FROM favorites WHERE user_id = ?");
+    $fav_stmt->bind_param("i", $user_id);
+    $fav_stmt->execute();
+    $fav_result = $fav_stmt->get_result();
+    if ($row = $fav_result->fetch_assoc()) {
+        $fav_count = $row['total'];
+    }
+    $fav_stmt->close();
+}
 
 // Fetch favorite rooms
 $sql = "SELECT rooms.* FROM rooms JOIN favorites ON rooms.id = favorites.room_id WHERE favorites.user_id = ?";
@@ -32,6 +43,22 @@ $result = $stmt->get_result();
 <body>
 
 <div class="main-container">
+<div class="navbar">
+        <div class="logo">
+            <a href="user_dashboard.php"><img id="homeimg" class="icon" src="house.png"></a>
+        </div>
+        <div class="nav-links">
+            <a class="nav-links" href="#about-section">About Us</a>
+            <a class="nav-links" href="add_room.php">✚ Add Room</a>
+            <?php if ($user_id): ?>
+                <a class="nav-links" href="favorites.php">❤️ Favourites <span style="color:red;">(<?php echo $fav_count; ?>)</span></a>
+                <a class="nav-links" href="myuploads.php">📂 My Uploads</a>
+                <a class="nav-links" href="index.php">👤 Logout</a>
+            <?php else: ?>
+                <a class="nav-links" href="index.php">👤 Log in</a>
+            <?php endif; ?>
+        </div>
+    </div><br><br><br>
     <h1>My Favorite Rooms</h1>
     <div class="room-cards">
         <?php if ($result->num_rows > 0): ?>
@@ -72,8 +99,6 @@ $result = $stmt->get_result();
             <p>No favorite rooms found.</p>
         <?php endif; ?>
     </div>
-</div id="backbtn">
-<a href="user_dashboard.php"> <button>Back to Dashboard </button></a>
 
 <script>
 $(document).ready(function() {

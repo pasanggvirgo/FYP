@@ -10,20 +10,35 @@ if ($conn->connect_error) {
 
 // Initialize error message
 $error = null;
+$payment_completed = false;
 
+$user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : null;
+$fav_count = 0;
+if ($user_id) {
+    $fav_stmt = $conn->prepare("SELECT COUNT(*) AS total FROM favorites WHERE user_id = ?");
+    $fav_stmt->bind_param("i", $user_id);
+    $fav_stmt->execute();
+    $fav_result = $fav_stmt->get_result();
+    if ($row = $fav_result->fetch_assoc()) {
+        $fav_count = $row['total'];
+    }
+    $fav_stmt->close();
+}
 // Retrieve room ID from URL parameter
 if (isset($_GET['id']) && is_numeric($_GET['id'])) {
-    $room_id = $_GET['id'];
+    $room_id = intval($_GET['id']);
 
     // Fetch room details from database
-    $sql = "SELECT * FROM rooms WHERE id = ?";
-    $stmt = $conn->prepare($sql);
+    $stmt = $conn->prepare("SELECT * FROM rooms WHERE id = ?");
     $stmt->bind_param("i", $room_id);
     $stmt->execute();
     $result = $stmt->get_result();
 
     if ($result->num_rows > 0) {
         $room = $result->fetch_assoc();
+        if (!empty($room['payment_status']) && $room['payment_status'] === 'paid') {
+            $payment_completed = true;
+        }
     } else {
         $error = "Room not found.";
     }
@@ -40,8 +55,8 @@ if (isset($_GET['id']) && is_numeric($_GET['id'])) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Room Details</title>
+    <link rel="stylesheet" href="dashboard.css">
     <style>
-        /* General Styles */
         body {
             font-family: 'Poppins', sans-serif;
             background-color: #f5f5f5;
@@ -50,7 +65,7 @@ if (isset($_GET['id']) && is_numeric($_GET['id'])) {
             color: #333;
         }
         .container {
-            max-width: 800px;
+            width: 800px;
             margin: 50px auto;
             padding: 25px;
             background: #ffffff;
@@ -86,17 +101,17 @@ if (isset($_GET['id']) && is_numeric($_GET['id'])) {
             max-width: 600px;
             margin: 20px auto;
             overflow: hidden;
+            border-radius: 10px;
         }
         .slides {
             display: flex;
             transition: transform 0.5s ease-in-out;
         }
         .slide {
-            flex-shrink: 0; /* Prevent slides from shrinking */
+            flex-shrink: 0;
             width: 100%;
-            /* Enforcing a fixed aspect ratio, e.g., 16:9 */
             position: relative;
-            padding-top: 56.25%; /* Aspect ratio 16:9 (height is 56.25% of width) */
+            padding-top: 56.25%; /* 16:9 Aspect Ratio */
         }
         .slide img {
             position: absolute;
@@ -104,25 +119,29 @@ if (isset($_GET['id']) && is_numeric($_GET['id'])) {
             left: 0;
             width: 100%;
             height: 100%;
-            object-fit: cover; /* Ensures the image maintains the aspect ratio */
+            object-fit: cover;
             border-radius: 8px;
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
         }
-        .slider .prev, .slider .next {
-            position: absolute;
-            top: 50%;
-            transform: translateY(-50%);
-            background-color: rgba(0, 0, 0, 0.5);
-            color: white;
-            padding: 10px;
-            border: none;
+
+        /* Dots Styling */
+        .dots {
+            text-align: center;
+            margin-top: 10px;
+        }
+        .dot {
+            height: 12px;
+            width: 12px;
+            margin: 0 5px;
+            background-color: #ddd;
+            border-radius: 50%;
+            display: inline-block;
             cursor: pointer;
+            transition: background-color 0.3s ease;
         }
-        .slider .prev {
-            left: 10px;
-        }
-        .slider .next {
-            right: 10px;
+        .dot.active {
+            background-color: white;
+            border: 2px solid #007BFF;
         }
 
         /* Error Message */
@@ -161,91 +180,96 @@ if (isset($_GET['id']) && is_numeric($_GET['id'])) {
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Room Details</h1>
-
-        <!-- Display error message if any -->
-        <?php if ($error): ?>
-            <p class="error"><?php echo $error; ?></p>
-        <?php else: ?>
-            <div class="room-details">
-                <!-- Slider for room photos -->
-                <?php 
-                // Decode the JSON array of photos
-                $photos = json_decode($room['photos'], true);
-
-                if (!empty($photos)) {
-                    echo '<div class="slider">';
-                    echo '<div class="slides">';
-                    foreach ($photos as $photo) {
-                        echo '<div class="slide"><img src="' . htmlspecialchars($photo) . '" alt="Room Photo"></div>';
-                    }
-                    echo '</div>';
-                    echo '<button class="prev">❮</button>';
-                    echo '<button class="next">❯</button>';
-                    echo '</div>';
-                } else {
-                    echo "<p>No photos available.</p>";
-                }
-                ?>
-                
-                <p><strong>Location:</strong> 🌍 <?php echo htmlspecialchars($room['location']); ?></p>
-                <p><strong>Monthly Rent:</strong> 💵 Rs.<?php echo number_format($room['rent'], 2); ?></p>
-                <p><strong>Seller Contact:</strong> 📞 <?php echo htmlspecialchars($room['seller_contact']); ?></p>
-                <p><strong>Property Type:</strong> 🏠 <?php echo htmlspecialchars($room['property_type']); ?></p>
-                <p><strong>Furnishing Status:</strong> 🛋️ <?php echo htmlspecialchars($room['furnishing_status']); ?></p>
-                <p><strong>Description:</strong> ✨ <?php echo nl2br(htmlspecialchars($room['description'])); ?></p>
-
-            </div>
-        <?php endif; ?>
-
-        <!-- Buttons -->
-        <div>
-            <a href="user_dashboard.php" class="btn btn-back">Back to Dashboard</a>
-            <?php if (!$error): ?>
-                <a href="tel:<?php echo htmlspecialchars($room['seller_contact']); ?>" class="btn btn-contact">Call Seller</a>
+<div class="main-container">
+<div class="navbar">
+        <div class="logo">
+            <a href="user_dashboard.php"><img id="homeimg" class="icon" src="house.png"></a>
+        </div>
+        <div class="nav-links">
+            <a class="nav-links" href="#about-section">About Us</a>
+            <a class="nav-links" href="add_room.php">✚ Add Room</a>
+            <?php if ($user_id): ?>
+                <a class="nav-links" href="favorites.php">❤️ Favourites <span style="color:red;">(<?php echo $fav_count; ?>)</span></a>
+                <a class="nav-links" href="myuploads.php">📂 My Uploads</a>
+                <a class="nav-links" href="index.php">👤 Logout</a>
+            <?php else: ?>
+                <a class="nav-links" href="index.php">👤 Log in</a>
             <?php endif; ?>
         </div>
     </div>
 
-    <script>
-        // JavaScript to control the slider functionality
-        let currentIndex = 0;
-        const slides = document.querySelectorAll('.slide');
-        const totalSlides = slides.length;
+<div class="container">
+    <h1>Room Details</h1>
 
-        // Show the first image
+    <?php if ($error): ?>
+        <p class="error"><?php echo $error; ?></p>
+    <?php else: ?>
+        <div class="room-details">
+            <!-- Image Slider -->
+            <?php 
+            $photos = json_decode($room['photos'], true);
+            if (!empty($photos)) {
+                echo '<div class="slider">';
+                echo '<div class="slides">';
+                foreach ($photos as $photo) {
+                    echo '<div class="slide"><img src="' . htmlspecialchars($photo) . '" alt="Room Photo"></div>';
+                }
+                echo '</div>';
+
+                // Add Dots
+                echo '<div class="dots">';
+                foreach ($photos as $index => $photo) {
+                    echo '<span class="dot" onclick="goToSlide(' . $index . ')"></span>';
+                }
+                echo '</div>';
+                echo '</div>';
+            } else {
+                echo "<p>No photos available.</p>";
+            }
+            ?>
+
+            <p><strong>Location:</strong> <?php echo htmlspecialchars($room['location']); ?></p>
+            <p><strong>Monthly Rent:</strong> Rs.<?php echo number_format($room['rent'], 2); ?></p>
+            <p><strong>Property Type:</strong> <?php echo htmlspecialchars($room['property_type']); ?></p>
+            <p><strong>Furnishing Status:</strong> <?php echo htmlspecialchars($room['furnishing_status']); ?></p>
+            <p><strong>Description:</strong> <?php echo nl2br(htmlspecialchars($room['description'])); ?></p>
+
+            <p><strong>Seller Contact:</strong>
+                <?php if ($payment_completed): ?>
+                    📞 <?php echo htmlspecialchars($room['seller_contact']); ?>
+                <?php else: ?>
+                    <a href="esewa_payment.php?room_id=<?php echo $room_id; ?>" class="btn btn-contact">Pay with Esewa to View</a>
+                <?php endif; ?>
+            </p>
+        </div>
+    <?php endif; ?>
+
+</div>
+
+                </div>
+
+<script>
+    let currentIndex = 0;
+    const slides = document.querySelectorAll('.slide');
+    const dots = document.querySelectorAll('.dot');
+    const totalSlides = slides.length;
+
+    function showSlide(index) {
+        slides.forEach(slide => slide.style.display = 'none');
+        dots.forEach(dot => dot.classList.remove('active'));
+
+        slides[index].style.display = 'block';
+        dots[index].classList.add('active');
+    }
+
+    function nextSlide() {
+        currentIndex = (currentIndex + 1) % totalSlides;
         showSlide(currentIndex);
+    }
 
-        document.querySelector('.next').addEventListener('click', function() {
-            if (currentIndex < totalSlides - 1) {
-                currentIndex++;
-            } else {
-                currentIndex = 0;
-            }
-            showSlide(currentIndex);
-        });
+    showSlide(currentIndex);
+    setInterval(nextSlide, 3000);
+</script>
 
-        document.querySelector('.prev').addEventListener('click', function() {
-            if (currentIndex > 0) {
-                currentIndex--;
-            } else {
-                currentIndex = totalSlides - 1;
-            }
-            showSlide(currentIndex);
-        });
-
-        function showSlide(index) {
-            // Hide all slides
-            slides.forEach(slide => slide.style.display = 'none');
-            // Show the current slide
-            slides[index].style.display = 'block';
-        }
-    </script>
 </body>
 </html>
-
-<?php
-// Close the database connection
-$conn->close();
-?>
