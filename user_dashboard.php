@@ -20,44 +20,61 @@ if ($user_id) {
 }
 
 
+
+
 $search = isset($_GET['search']) ? trim($_GET['search']) : "";
 $location = isset($_GET['location']) ? trim($_GET['location']) : "";
 $property_type = isset($_GET['property_type']) ? trim($_GET['property_type']) : "";
-$price = isset($_GET['price']) ? trim($_GET['price']) : "";
 $room_id = isset($_GET['room_id']) ? trim($_GET['room_id']) : "";
+$min_price = isset($_GET['min_price']) ? intval($_GET['min_price']) : null;
+$max_price = isset($_GET['max_price']) ? intval($_GET['max_price']) : null;
 
-if (!empty($search) || !empty($location) || !empty($property_type) || !empty($price) || !empty($room_id)) {
-    // If any filter is applied
-    $sql = "SELECT * FROM rooms WHERE verified = 1 AND (location LIKE ? OR description LIKE ? OR id LIKE ?)";
-    $params = ["%$search%", "%$search%", "%$room_id%"];
-    $types = "sss";
+$params = [];
+$types = "";
+$sql = "SELECT * FROM rooms WHERE verified = 1 AND availability = 'Available'";
 
-    if (!empty($location)) {
-        $sql .= " AND location LIKE ?";
-        $params[] = "%$location%";
-        $types .= "s";
-    }
-    if (!empty($property_type)) {
-        $sql .= " AND property_type = ?";
-        $params[] = $property_type;
-        $types .= "s";
-    }
-    if (!empty($price)) {
-        $sql .= " AND rent <= ?";
-        $params[] = $price;
-        $types .= "i";
-    }
-    if (!empty($room_id)) {
-        $sql = "SELECT * FROM rooms WHERE verified = 1 AND id = ?";
-        $params = [$room_id];
-        $types = "i";
-    }
-} else {
-    // No filters — show 12 rooms from lowest rent
-    $sql = "SELECT * FROM rooms WHERE verified = 1 ORDER BY rent ASC LIMIT 8";
-    $params = [];
-    $types = "";
+if (!empty($search)) {
+    $sql .= " AND (location LIKE ? OR description LIKE ?)";
+    $params[] = "%$search%";
+    $params[] = "%$search%";
+    $types .= "ss";
 }
+
+if (!empty($location)) {
+    $sql .= " AND location LIKE ?";
+    $params[] = "%$location%";
+    $types .= "s";
+}
+
+if (!empty($property_type)) {
+    $sql .= " AND property_type = ?";
+    $params[] = $property_type;
+    $types .= "s";
+}
+
+if (!empty($room_id)) {
+    $sql .= " AND id = ?";
+    $params[] = $room_id;
+    $types .= "i";
+}
+
+if (!is_null($min_price)) {
+    $sql .= " AND rent >= ?";
+    $params[] = $min_price;
+    $types .= "i";
+}
+
+if (!is_null($max_price)) {
+    $sql .= " AND rent <= ?";
+    $params[] = $max_price;
+    $types .= "i";
+}
+
+// If no filters applied
+if (empty($search) && empty($location) && empty($property_type) && empty($room_id) && is_null($min_price) && is_null($max_price)) {
+    $sql .= " ORDER BY rent ASC LIMIT 8";
+}
+
 
 
 $stmt = $conn->prepare($sql);
@@ -78,6 +95,11 @@ $result = $stmt->get_result();
     <title>User Dashboard</title>
     <link rel="stylesheet" href="dashboard.css">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- noUiSlider CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/nouislider@15.7.0/dist/nouislider.min.css">
+    <!-- noUiSlider JS -->
+    <script src="https://cdn.jsdelivr.net/npm/nouislider@15.7.0/dist/nouislider.min.js"></script>
+
 </head>
 <body>
 <div class="main-container">
@@ -86,11 +108,11 @@ $result = $stmt->get_result();
             <a href="user_dashboard.php"><img id="homeimg" class="icon" src="house.png"></a>
         </div>
         <div class="nav-links">
-            <a class="nav-links" href="#about-section">About Us</a>
-            <a class="nav-links" href="add_room.php">✚ Add Room</a>
+        <a class="nav-links" href="my_chats.php">💬 My Chats </a>
+        <a class="nav-links" href="add_room.php">✚ Add Room</a>
             <?php if ($user_id): ?>
-                <a class="nav-links" href="favorites.php">❤️ Favourites <span style="color:red;">(<?php echo $fav_count; ?>)</span></a>
-                <a class="nav-links" href="myuploads.php">📂 My Uploads</a>
+                <a class="nav-links" href="favorites.php">Favourites <span style="color:red;">(<?php echo $fav_count; ?>)</span></a>
+                <a class="nav-links" href="myuploads.php">My Uploads</a>
                 <a class="nav-links" href="index.php">👤 Logout</a>
             <?php else: ?>
                 <a class="nav-links" href="index.php">👤 Log in</a>
@@ -113,7 +135,21 @@ $result = $stmt->get_result();
                 <option value="Shutters" <?php if ($property_type == "Shutters") echo "selected"; ?>>Shutters</option>
             </select>
 
-            <input type="number" name="price" placeholder="💰 Max Price" min="1" value="<?php echo htmlspecialchars($price); ?>">
+            <div class="price-slider-container" style="display: flex; text-align: center; flex-direction: column; gap: 0px; max-width: 400px;">
+                <label for="price-range">💰 Price Range:</label>
+                
+                <div id="price-slider" style="width: 180px;"></div>
+
+                <div id="priceLabel">
+                    Rs. <span id="min-price-display">0</span> - Rs. <span id="max-price-display">100000</span>
+                </div>
+
+                <!-- Hidden inputs for form submission -->
+                <input type="hidden" name="min_price" id="minPriceInput">
+                <input type="hidden" name="max_price" id="maxPriceInput">
+            </div>
+
+
             <input type="text" name="room_id" placeholder="🏠 Room ID" value="<?php echo htmlspecialchars($room_id); ?>">
             <button type="submit">🔍 Search</button>
             <button type="button" id="clear-filters">Clear Filter</button> 
@@ -157,10 +193,15 @@ $result = $stmt->get_result();
                         echo "<img src='default-room.jpg' alt='Default Room Photo'>";
                     }
                     ?>
-                    <h3><?php echo "ID ".htmlspecialchars($row['id']).", ".htmlspecialchars($row['location']).", ".htmlspecialchars($row['property_type']); ?></h3>
-                    <p><strong>📍 Location:</strong> <?php echo htmlspecialchars($row['location']); ?></p>
-                    <p style="color:red;"><strong>💰 Monthly Rent:</strong> Rs.<?php echo htmlspecialchars($row['rent']); ?></p>
+                    <h3><?php echo "ID ".htmlspecialchars($row['id']).", ".htmlspecialchars($row['location1']).", ".htmlspecialchars($row['property_type']); ?></h3>
+                    <p style="color:#3FB8AF;"><strong>💰 Monthly Rent:</strong> Rs.<?php echo htmlspecialchars($row['rent']); ?></p>
                     <p><strong>🏠Property Type:</strong> <?php echo htmlspecialchars($row['property_type']); ?></p>
+                    <?php
+                    $status = htmlspecialchars($row['availability']);
+                    $color = ($status === 'Available') ? '#3FB8AF' : 'red';
+                    ?>
+                    <p> <span style="color: <?php echo $color; ?>;"><?php echo $status; ?></span></p>
+
                 </a>
 
                 <button class="favorite-btn" data-room-id="<?php echo $row['id']; ?>">
@@ -199,16 +240,59 @@ $result = $stmt->get_result();
 
     <div class="footer">
         <p>&copy; 2025 Kothamandu.com | All Rights Reserved</p>
-        <p>
-            <a href="#">Privacy Policy</a>
-            <a href="#">Terms of Service</a>
-            <a href="#">Contact Us</a>
-        </p>
+
     </div>
 
 </div>
 
 <script>
+        const minFromURL = <?php echo isset($_GET['min_price']) ? $_GET['min_price'] : 0; ?>;
+    const maxFromURL = <?php echo isset($_GET['max_price']) ? $_GET['max_price'] : 100000; ?>;
+
+    const priceSlider = document.getElementById('price-slider');
+    noUiSlider.create(priceSlider, {
+        start: [minFromURL, maxFromURL],
+        connect: true,
+        step: 1000,
+        range: {
+            min: 0,
+            max: 100000
+        },
+        format: {
+            to: value => Math.round(value),
+            from: value => Number(value)
+        }
+    });
+
+    const minPriceDisplay = document.getElementById('min-price-display');
+    const maxPriceDisplay = document.getElementById('max-price-display');
+    const minPriceInput = document.getElementById('minPriceInput');
+    const maxPriceInput = document.getElementById('maxPriceInput');
+
+    priceSlider.noUiSlider.on('update', function (values) {
+        minPriceDisplay.textContent = values[0];
+        maxPriceDisplay.textContent = values[1];
+        minPriceInput.value = values[0];
+        maxPriceInput.value = values[1];
+    });
+    function updateSliderLabel() {
+        const min = document.getElementById('minPrice').value;
+        const max = document.getElementById('maxPrice').value;
+        document.getElementById('priceLabel').innerText = `Rs. ${min} - Rs. ${max}`;
+    }
+
+    // Ensure correct order if user sets max lower than min
+    const form = document.querySelector('.search-form');
+    form.addEventListener('submit', function (e) {
+        const minInput = document.getElementById('minPrice');
+        const maxInput = document.getElementById('maxPrice');
+        if (parseInt(minInput.value) > parseInt(maxInput.value)) {
+            // Swap values
+            [minInput.value, maxInput.value] = [maxInput.value, minInput.value];
+        }
+    });
+
+
     document.addEventListener("DOMContentLoaded", function () {
     // Carousel setup
     let index = 0;

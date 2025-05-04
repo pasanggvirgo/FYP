@@ -50,6 +50,7 @@ $success = null;
 // Handle form submission
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['edit_room'])) {
     $location = trim($_POST['location']);
+    $location1 = trim($_POST['location1']);
     $rent = floatval($_POST['rent']);
     $property_type = trim($_POST['property_type']);
     $furnishing_status = trim($_POST['furnishing_status']);
@@ -86,9 +87,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['edit_room'])) {
     // Update database if no errors
     if (!$error) {
         $photo_json = json_encode($photo_paths);
-        $sql = "UPDATE rooms SET location = ?, rent = ?, property_type = ?, furnishing_status = ?, contact_info = ?, description = ?, photos = ? WHERE id = ?";
+        $sql = "UPDATE rooms SET location = ?,location1=?, rent = ?, property_type = ?, furnishing_status = ?, contact_info = ?, description = ?, photos = ? WHERE id = ?";
         $stmt = $conn->prepare($sql);
-        $stmt->bind_param("sdsssssi", $location, $rent, $property_type, $furnishing_status, $contact_info, $description, $photo_json, $room_id);
+        $stmt->bind_param("ssdsssssi", $location,$location1, $rent, $property_type, $furnishing_status, $contact_info, $description, $photo_json, $room_id);
 
         if ($stmt->execute()) {
             $success = "Room updated successfully!";
@@ -116,11 +117,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['edit_room'])) {
             <a href="user_dashboard.php"><img id="homeimg" class="icon" src="house.png"></a>
         </div>
         <div class="nav-links">
-            <a class="nav-links" href="#about-section">About Us</a>
+            <a class="nav-links" href="my_chats.php">💬 My Chats</a>
             <a class="nav-links" href="add_room.php">✚ Add Room</a>
             <?php if ($user_id): ?>
-                <a class="nav-links" href="favorites.php">❤️ Favourites <span style="color:red;">(<?php echo $fav_count; ?>)</span></a>
-                <a class="nav-links" href="myuploads.php">📂 My Uploads</a>
+                <a class="nav-links" href="favorites.php">Favourites <span style="color:red;">(<?php echo $fav_count; ?>)</span></a>
+                <a class="nav-links" href="myuploads.php">My Uploads</a>
                 <a class="nav-links" href="index.php">👤 Logout</a>
             <?php else: ?>
                 <a class="nav-links" href="index.php">👤 Log in</a>
@@ -141,8 +142,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['edit_room'])) {
 
         <!-- Edit Room Form -->
         <form action="edit_room.php?id=<?php echo $room_id; ?>" method="POST" enctype="multipart/form-data">
+        <div class="form-group">
+                <label for="location1">Location:</label>
+                <input type="text" id="location1" name="location1" value="<?php echo htmlspecialchars($room['location1']); ?>" required>
+            </div>
             <div class="form-group">
-                <label for="location">Location:</label>
+                <label for="location">Detailed Location:</label>
                 <input type="text" id="location" name="location" value="<?php echo htmlspecialchars($room['location']); ?>" required>
             </div>
 

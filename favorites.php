@@ -48,11 +48,11 @@ $result = $stmt->get_result();
             <a href="user_dashboard.php"><img id="homeimg" class="icon" src="house.png"></a>
         </div>
         <div class="nav-links">
-            <a class="nav-links" href="#about-section">About Us</a>
+            <a class="nav-links" href="my_chats.php">💬 My Chats</a>
             <a class="nav-links" href="add_room.php">✚ Add Room</a>
             <?php if ($user_id): ?>
-                <a class="nav-links" href="favorites.php">❤️ Favourites <span style="color:red;">(<?php echo $fav_count; ?>)</span></a>
-                <a class="nav-links" href="myuploads.php">📂 My Uploads</a>
+                <a class="nav-links" href="favorites.php">Favourites <span style="color:red;">(<?php echo $fav_count; ?>)</span></a>
+                <a class="nav-links" href="myuploads.php">My Uploads</a>
                 <a class="nav-links" href="index.php">👤 Logout</a>
             <?php else: ?>
                 <a class="nav-links" href="index.php">👤 Log in</a>
@@ -77,10 +77,14 @@ $result = $stmt->get_result();
                         echo "<img src='default-room.jpg' alt='Default Room Photo'>";
                     }
                     ?>
-                    <h3><?php echo "ID ".htmlspecialchars($row['id']).", ".htmlspecialchars($row['location']).", ".htmlspecialchars($row['property_type']); ?></h3>
-                    <p><strong>📍 Location:</strong> <?php echo htmlspecialchars($row['location']); ?></p>
-                    <p style="color:red;"><strong>💰 Monthly Rent:</strong> Rs.<?php echo htmlspecialchars($row['rent']); ?></p>
+                    <h3><?php echo "ID ".htmlspecialchars($row['id']).", ".htmlspecialchars($row['location1']).", ".htmlspecialchars($row['property_type']); ?></h3>
+                    <p style="color:#3FB8AF;"><strong>💰 Monthly Rent:</strong> Rs.<?php echo htmlspecialchars($row['rent']); ?></p>
                     <p><strong>🏠Property Type:</strong> <?php echo htmlspecialchars($row['property_type']); ?></p>
+                    <?php
+                    $status = htmlspecialchars($row['availability']);
+                    $color = ($status === 'Available') ? ' #3FB8AF ' : 'red';
+                    ?>
+                    <p><span style="color: <?php echo $color; ?>;"><?php echo $status; ?></span></p>
                 </a>
 
                 <button class="favorite-btn" data-room-id="<?php echo $row['id']; ?>">

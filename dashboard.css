@@ -34,28 +34,29 @@ body {
 .navbar a {
     color: black;
     text-decoration: none;
-    
+    font-weight: 550;
     margin: 0 1rem;
 }
 
 .navbar a:hover {
     text-decoration: none;
-    color: blue;
+    color: #18b3a9 ;
 }
 .nav-links {
     text-decoration: none;
+    
     padding: 8px 15px;
     border-radius: 5px;
     transition: background-color 0.3s ease;
 }
 
 .nav-links[href="index.php"] {
-    background-color: blue;
+    background-color:#27bbb1;
     color: white;
 }
 
 .nav-links[href="index.php"]:hover {
-    background-color: darkblue;
+    background-color: #0fb5aa;
     color: white;
 }
 
@@ -69,7 +70,7 @@ body {
 
 
 .logo{
-    margin-right: -340px;
+    margin-right: -380px;
 }
 
 
@@ -109,12 +110,12 @@ body {
 
 .search-form {
     display: flex;
-    gap: 12px;
+    gap: 32px;
     align-items: center;
     background: white;
     padding: 10px;
     border-radius: 20px;
-    width: 970px;
+    width: 1100px;
 }
 
 .search-form input {
@@ -126,7 +127,7 @@ body {
 
 .search-form button {
     padding: 8px 15px;
-    background-color: green;
+    background-color: #3FB8AF;
     color: white;
     border: none;
     cursor: pointer;
@@ -134,7 +135,7 @@ body {
 }
 
 .search-form button:hover {
-    background-color: #0056b3;
+    background-color: #70b5b0;
 }
 
 /* Centered Content */
@@ -187,7 +188,7 @@ textarea {
 
 /* Buttons */
 button {
-    background-color: #4CAF50;
+    background-color: #3FB8AF;
     color: white;
     padding: 10px 15px;
     border: none;
@@ -200,7 +201,7 @@ button {
 }
 
 button:hover {
-    background-color: #45a049;
+    background-color: #3FB8AF;
 }
 
 /* Error Messages */
@@ -216,7 +217,7 @@ button:hover {
     margin-top: 10px;
     display: inline-block;
     padding: 10px 15px;
-    background-color: #007BFF;
+    background-color: #3FB8AF;
     color: white;
     text-decoration: none;
     border-radius: 4px;
@@ -226,7 +227,7 @@ button:hover {
 }
 
 .back-btn:hover {
-    background-color: #0056b3;
+    background-color: #3FB8AF;
 }
 
 /* Room Cards Section */
@@ -395,6 +396,35 @@ button:hover {
     text-align: center;
     margin-top: -30px;
 }
+.availability-dropdown {
+    padding: 6px 10px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 14px;
+    cursor: pointer;
+    background-color: #f9f9f9;
+    color: #333;
+    transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.availability-dropdown:hover {
+    border-color: #888;
+}
+
+.availability-dropdown:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 5px rgba(0,123,255,0.3);
+}
+
+
+#priceLabel {
+    margin-top: 10px;
+    text-align: center;
+    font-weight: 500;
+    color: #080808;
+}
+
 
 /* Responsive Design */
 @media (max-width: 1024px) {

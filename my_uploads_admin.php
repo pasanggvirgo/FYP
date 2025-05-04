@@ -45,14 +45,12 @@ $result = $stmt->get_result();
 <div class="main-container">
 <div class="navbar">
         <div class="logo">
-            <a href="user_dashboard.php"><img id="homeimg" class="icon" src="house.png"></a>
+            <a href="admin_dashboard.php"><img id="homeimg" class="icon" src="house.png"></a>
         </div>
         <div class="nav-links">
-        <a class="nav-links" href="my_chats.php">💬 My Chats </a>
-        <a class="nav-links" href="add_room.php">✚ Add Room</a>
+        <a class="nav-links" href="add_room_admin.php">✚ Add Room</a>
             <?php if ($user_id): ?>
-                <a class="nav-links" href="favorites.php">Favourites <span style="color:red;">(<?php echo $fav_count; ?>)</span></a>
-                <a class="nav-links" href="myuploads.php">My Uploads</a>
+                <a class="nav-links" href="my_uploads_admin.php">Uploads</a>
                 <a class="nav-links" href="index.php">👤 Logout</a>
             <?php else: ?>
                 <a class="nav-links" href="index.php">👤 Log in</a>
